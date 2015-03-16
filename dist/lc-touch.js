@@ -1,5 +1,5 @@
 /*! 
- lc-touch v0.6.1 
+ lc-touch v0.6.6 
  Author: Leland Cope @lelandcope 
  2015-03-16 
  */
