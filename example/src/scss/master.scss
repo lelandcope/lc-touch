@@ -1,0 +1,71 @@
+@import "bootstrap";
+
+$width: 500;
+$height: 400;
+
+
+.wrapper {
+	width: $width+px;
+	height: $height+px;
+	overflow: hidden;
+	margin: 0 auto;
+
+	.arrow {
+		font-size: 30px;
+		color: #fff;
+
+		&:hover {
+			color: #ccc;
+		}
+	}
+
+	ul.img-holder {
+/* 		display: block; */
+		list-style: none;
+/*
+		width: $width*5+px;
+		height: $height+px;
+*/
+		margin: 0;
+
+		li {
+/*
+			display: block;
+			width: $width+px;
+			height: $height+px;
+*/
+			background-position: cover;
+/* 			float: left; */
+
+			&.img1 {
+				background: url(../images/img1.jpg) no-repeat center center;
+			}
+
+			&.img2 {
+				background: url(../images/img2.jpg) no-repeat center center;
+			}
+
+			&.img3 {
+				background: url(../images/img3.jpg) no-repeat center center;
+			}
+
+			&.img4 {
+				background: url(../images/img4.jpg) no-repeat center center;
+			}
+
+			&.img5 {
+				background: url(../images/img5.jpg) no-repeat center center;
+			}
+		}
+	}
+}
+
+.bigger {
+    background: -webkit-linear-gradient(#0b3d6c 0%, #1799ea 100%);
+    height: 800px;
+    width: 100%;
+}
+
+body {
+    overflow: hidden;
+}

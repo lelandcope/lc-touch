@@ -1,0 +1,15 @@
+{
+  "name": "lc-touch",
+  "version": "0.6.5",
+  "description": "ERROR: No README.md file found!",
+  "main": "dist/lc-touch.js",
+  "repository": "",
+  "author": "Leland Cope @lelandcope",
+  "license": "BSD",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-coffee": "~0.7.0",
+    "grunt-contrib-uglify": "~0.2.4",
+    "grunt-vbump": "0.0.5"
+  }
+}

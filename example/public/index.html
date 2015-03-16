@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en-US" ng-app="application">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+
+  <title>Angular JS Project</title>
+
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="icon" href="favicon.ico">
+
+
+  <link rel="stylesheet" type="text/css" href="css/style.css?647bbbabd9b373d2">
+  <link rel="stylesheet" href="css/font-awesome/css/font-awesome.min.css?fa5ecf5224f554bb">
+
+  <script type="text/javascript" src="js/libs/jquery.min.js?7fcebda81012b5d1"></script>
+  <script type="text/javascript" src="js/libs/angular.min.1.2.0.js?9464d9b19db070c0"></script>
+  <script type="text/javascript" src="js/libs/angular-route.min.js?abda35557abf2fbc"></script>
+  <script type="text/javascript" src="js/libs/angular-resource.min.js?eba396038326df81"></script>
+  <script type="text/javascript" src="js/libs/angular-ui.min.js?09b26dc28424046e"></script>
+  <script type="text/javascript" src="js/libs/ui-bootstrap-tpls.min.js?267274e4757b4db2"></script>
+
+  <script type="text/javascript" src="js/libs/jquery.transit.min.js?918ecb0cb0e9528d"></script>
+  <script type="text/javascript" src="js/libs/moment.min.js?13b09cb6920c869b"></script>
+  <script type="text/javascript" src="js/libs/jquery.waitforimages.min.js?f442e56407bd15b0"></script>
+
+  <script type="text/javascript" src="js/libs/angular-retina.min.js?410633ebd801fb7d"></script>
+  <script type="text/javascript" src="js/libs/localStorageModule.js?73985b2ab58153bd"></script>
+  <script type="text/javascript" src="js/libs/qdecorator.min.js?eb153c736b4c8180"></script>
+  <script type="text/javascript" src="js/lc-touch.min.js?4c612df6b083bdbc"></script>
+
+  <script type="text/javascript" src="js/app.min.js?d068d7a32bd9fcdb"></script>
+  <script type="text/javascript" src="js/controllers.min.js?3e4dc1c81af2a8b8"></script>
+  <script type="text/javascript" src="js/directives.min.js?499094a0c7a6f4aa"></script>
+  <script type="text/javascript" src="js/services.min.js?b61288c2a58a93a6"></script>
+  <script type="text/javascript" src="js/filters.min.js?88e97abf3caafcf0"></script>
+
+  <script type="text/javascript" src="http://edge.spot411.com/js/lib/webtoolkit.md5.js"></script>
+
+<!--[if lt IE 9]>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.6.2/html5shiv.js"></script>
+<![endif]-->
+</head>
+
+<body ng-controller="AppCtrl">
+
+	<script>
+    /*
+document.body.addEventListener('touchmove', function(event) {
+      //console.log(event.source);
+      //if (event.source == document.body)
+        event.preventDefault();
+    }, false);
+*/
+
+    window.onresize = function() {
+      $(document.body).width(window.innerWidth).height(window.innerHeight);
+    }
+
+    $(function() {
+      window.onresize();
+    });
+  </script>
+
+
+	<div ng-view></div>
+
+
+
+
+	<!-- Prompt IE 6 users to install Chrome Frame. Remove this if you want to support IE 6.
+		chromium.org/developers/how-tos/chrome-frame-getting-started -->
+	<!--[if lt IE 7 ]>
+		<script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.3/CFInstall.min.js"></script>
+		<script>window.attachEvent('onload',function(){CFInstall.check({mode:'overlay'})})</script>
+	<![endif]-->
+</body>
+</html>

@@ -1,0 +1,17 @@
+<div class="wrapper">
+	<ul class="img-holder one" lc-carousel-horizontal="gallery">
+		<li ng-repeat="item in items" style="background-image: url('{{item.thumb}}'); background-repeat: no-repeat; background-position: center center; background-size: cover; width: {{ carouselWidth }}; height: {{ carouselHeight }}; display: block; float: left;" class="t{{$index}}" lc-carousel-items-rendered="itemsRendered()"></li>
+	</ul>
+</div>
+
+<div class="bigger"></div>
+
+<!--
+<br>
+
+<div class="wrapper">
+	<ul class="img-holder one" lc-carousel-horizontal="gallery">
+		<li ng-repeat="item in items" style="background-image: url('{{item.thumb}}'); background-repeat: no-repeat; background-position: center center; background-size: cover; width: {{ carouselWidth }}px; height: {{ carouselHeight }}px; display: block; float: left;" class="t{{$index}}"></li>
+	</ul>
+</div>
+-->
