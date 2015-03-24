@@ -1,7 +1,7 @@
 /*! 
- lc-touch v0.6.6 
+ lc-touch v0.6.7 
  Author: Leland Cope @lelandcope 
- 2015-03-16 
+ 2015-03-24 
  */
 
 (function() {
@@ -21,16 +21,18 @@
   */
     lcTouch.directive("ngTap", [ "$timeout", function($timeout) {
         return function(scope, elem, attrs) {
-            var distanceThreshold, tapped, timeThreshold;
+            var distanceThreshold, dragged, tapped, timeThreshold;
             distanceThreshold = 25;
             timeThreshold = 500;
             tapped = false;
+            dragged = false;
             elem.on("touchstart", function(startEvent) {
                 var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
                 target = startEvent.target;
                 touchStart = startEvent.touches[0];
                 startX = touchStart.pageX;
                 startY = touchStart.pageY;
+                tapped = false;
                 removeTapHandler = function() {
                     $timeout.cancel();
                     elem.off("touchmove", moveHandler);
@@ -58,8 +60,21 @@
                 elem.on("touchmove", moveHandler);
                 return elem.on("touchend", tapHandler);
             });
+            elem.on("mousedown", function() {
+                var handleMousemove, handleMouseup;
+                dragged = false;
+                handleMousemove = function() {
+                    return dragged = true;
+                };
+                handleMouseup = function() {
+                    elem.off("mousemove");
+                    return elem.off("mouseup");
+                };
+                elem.on("mousemove", handleMousemove);
+                return elem.on("mouseup", handleMouseup);
+            });
             return elem.bind("click", function() {
-                if (!tapped) {
+                if (!(tapped || dragged)) {
                     return scope.$apply(attrs["ngTap"]);
                 }
             });

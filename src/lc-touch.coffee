@@ -18,12 +18,14 @@ lcTouch.directive 'ngTap', ['$timeout', ($timeout)->
         distanceThreshold    = 25
         timeThreshold        = 500
         tapped               = false
+        dragged              = false
 
         elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
             touchStart  = startEvent.touches[0]
             startX      = touchStart.pageX
             startY      = touchStart.pageY
+            tapped      = false
 
             removeTapHandler = ()->
                 $timeout.cancel()
@@ -52,8 +54,21 @@ lcTouch.directive 'ngTap', ['$timeout', ($timeout)->
             elem.on 'touchmove', moveHandler
             elem.on 'touchend', tapHandler
 
-        elem.bind 'click', ()->
-            unless tapped
+        elem.on 'mousedown', ->
+            dragged = false
+
+            handleMousemove = ->
+                dragged = true
+
+            handleMouseup = ->
+                elem.off 'mousemove'
+                elem.off 'mouseup'
+
+            elem.on 'mousemove', handleMousemove
+            elem.on 'mouseup', handleMouseup
+
+        elem.bind 'click', ->
+            unless tapped or dragged
                 scope.$apply attrs["ngTap"]
 ]
 
