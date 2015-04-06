@@ -1,6 +1,80 @@
 lcTouch = angular.module 'lc.touch', []
 
 ###
+    $ngTap Service
+
+    Description: A service for ngTap. This allows you to add tap events to your own directives.
+
+    Parameters:
+    - elem - {html element} - The html element you want to listen for a touch event on.
+
+###
+
+lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
+    return (elem, selector)->
+        distanceThreshold    = 25
+        timeThreshold        = 500
+        tapped               = false
+        dragged              = false
+
+        elem.on 'touchstart', selector, (startEvent)->
+            target      = startEvent.target
+            touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
+                            startEvent.touches[0]
+            startX      = touchStart.pageX
+            startY      = touchStart.pageY
+            tapped      = false
+
+            removeTapHandler = ()->
+                $timeout.cancel()
+                elem.off 'touchmove', selector, moveHandler
+                elem.off 'touchend', selector, tapHandler
+
+            tapHandler = (endEvent)->
+                endEvent.preventDefault()
+                removeTapHandler()
+
+                if target is endEvent.target
+                    tapped = true
+                    angular.element(elem).trigger 'tap', endEvent
+
+            moveHandler = (moveEvent)->
+                touchMove  = moveEvent.originalEvent.touches[0] or moveEvent.originalEvent.changedTouches[0] or 
+                            moveEvent.touches[0]
+                moveX      = touchMove.pageX
+                moveY      = touchMove.pageY
+
+                if Math.abs(moveX - startX) > distanceThreshold or Math.abs(moveY - startY) > distanceThreshold
+                    tapped = true
+                    removeTapHandler()
+
+            $timeout removeTapHandler, timeThreshold
+
+            elem.on 'touchmove', selector, moveHandler
+            elem.on 'touchend', selector, tapHandler
+
+        elem.on 'mousedown', selector, ->
+            dragged = false
+
+            handleMousemove = ->
+                dragged = true
+
+            handleMouseup = ->
+                elem.off 'mousemove', selector
+                elem.off 'mouseup', selector
+
+            elem.on 'mousemove', selector, handleMousemove
+            elem.on 'mouseup', selector, handleMouseup
+
+        elem.on 'click', selector, (event)->
+            unless tapped or dragged
+                angular.element(elem).trigger 'tap', $(event.currentTarget)
+
+
+        return angular.element(elem)
+]
+
+###
     ngTap Directive
 
     Description: A replacement for ngClick. This directive will take into account taps and clicks so it
@@ -13,63 +87,10 @@ lcTouch = angular.module 'lc.touch', []
     <button type="button" ng-tap="doSomething()">Click Me</button>
 ###
 
-lcTouch.directive 'ngTap', ['$timeout', ($timeout)->
+lcTouch.directive 'ngTap', ['$ngTap', ($ngTap)->
     (scope, elem, attrs)->
-        distanceThreshold    = 25
-        timeThreshold        = 500
-        tapped               = false
-        dragged              = false
-
-        elem.on 'touchstart', (startEvent)->
-            target      = startEvent.target
-            touchStart  = startEvent.touches[0]
-            startX      = touchStart.pageX
-            startY      = touchStart.pageY
-            tapped      = false
-
-            removeTapHandler = ()->
-                $timeout.cancel()
-                elem.off 'touchmove', moveHandler
-                elem.off 'touchend', tapHandler
-
-            tapHandler = (endEvent)->
-                endEvent.preventDefault()
-                removeTapHandler()
-
-                if target is endEvent.target
-                    tapped = true
-                    scope.$apply attrs["ngTap"]
-
-            moveHandler = (moveEvent)->
-                touchMove  = moveEvent.touches[0]
-                moveX      = touchMove.pageX
-                moveY      = touchMove.pageY
-
-                if Math.abs(moveX - startX) > distanceThreshold or Math.abs(moveY - startY) > distanceThreshold
-                    tapped = true
-                    removeTapHandler()
-
-            $timeout removeTapHandler, timeThreshold
-
-            elem.on 'touchmove', moveHandler
-            elem.on 'touchend', tapHandler
-
-        elem.on 'mousedown', ->
-            dragged = false
-
-            handleMousemove = ->
-                dragged = true
-
-            handleMouseup = ->
-                elem.off 'mousemove'
-                elem.off 'mouseup'
-
-            elem.on 'mousemove', handleMousemove
-            elem.on 'mouseup', handleMouseup
-
-        elem.bind 'click', ->
-            unless tapped or dragged
-                scope.$apply attrs["ngTap"]
+        $ngTap(elem).on 'tap', ->
+            scope.$apply attrs["ngTap"]
 ]
 
 
@@ -92,7 +113,8 @@ lcTouch.directive 'ngDbltap', ['$timeout', ($timeout)->
 
         elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
-            touchStart  = startEvent.touches[0]
+            touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
+                            startEvent.touches[0]
             startX      = touchStart.pageX
             startY      = touchStart.pageY
 
@@ -113,7 +135,8 @@ lcTouch.directive 'ngDbltap', ['$timeout', ($timeout)->
                         scope.$apply attrs["ngDbltap"]
 
             moveHandler = (moveEvent)->
-                touchMove  = moveEvent.touches[0]
+                touchMove  = moveEvent.originalEvent.touches[0] or moveEvent.originalEvent.changedTouches[0] or 
+                            moveEvent.touches[0]
                 moveX      = touchMove.pageX
                 moveY      = touchMove.pageY
 
@@ -201,7 +224,7 @@ lcTouch.factory '$swipe', [()->
             endY         = 0
 
             ontouchstart = (e)->
-                touch   = e.touches[0]
+                touch   = e.originalEvent.touches[0] or e.originalEvent.changedTouches[0] or e.touches[0]
                 startX  = touch.pageX
                 startY  = touch.pageY
 
@@ -211,7 +234,7 @@ lcTouch.factory '$swipe', [()->
                 if events.start then events.start elem, [startX, startY], e
 
             ontouchmove = (e)->
-                touch   = e.touches[0]
+                touch   = e.originalEvent.touches[0] or e.originalEvent.changedTouches[0] or e.touches[0]
                 endX  = touch.pageX
                 endY  = touch.pageY
 

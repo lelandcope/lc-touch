@@ -1,11 +1,23 @@
 {
   "name": "lc-touch",
-  "version": "0.6.7",
-  "description": "ERROR: No README.md file found!",
+  "version": "0.6.10",
+  "description": "A touch library for angularjs",
   "main": "dist/lc-touch.js",
   "repository": "",
   "author": "Leland Cope @lelandcope",
-  "license": "BSD",
+  "keywords": [
+    "angularjs",
+    "touch",
+    "tap",
+    "ngTouch",
+    "ngClick",
+    "click"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lelandcope/lc-touch"
+  },
+  "license": "MIT",
   "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-contrib-coffee": "~0.7.0",

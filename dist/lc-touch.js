@@ -1,12 +1,82 @@
 /*! 
- lc-touch v0.6.7 
+ lc-touch v0.6.10 
  Author: Leland Cope @lelandcope 
- 2015-03-24 
+ 2015-04-06 
  */
 
 (function() {
     var lcTouch;
     lcTouch = angular.module("lc.touch", []);
+    /*
+      $ngTap Service
+  
+      Description: A service for ngTap. This allows you to add tap events to your own directives.
+  
+      Parameters:
+      - elem - {html element} - The html element you want to listen for a touch event on.
+  */
+    lcTouch.factory("$ngTap", [ "$timeout", function($timeout) {
+        return function(elem, selector) {
+            var distanceThreshold, dragged, tapped, timeThreshold;
+            distanceThreshold = 25;
+            timeThreshold = 500;
+            tapped = false;
+            dragged = false;
+            elem.on("touchstart", selector, function(startEvent) {
+                var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
+                target = startEvent.target;
+                touchStart = startEvent.originalEvent.touches[0] || startEvent.originalEvent.changedTouches[0] || startEvent.touches[0];
+                startX = touchStart.pageX;
+                startY = touchStart.pageY;
+                tapped = false;
+                removeTapHandler = function() {
+                    $timeout.cancel();
+                    elem.off("touchmove", selector, moveHandler);
+                    return elem.off("touchend", selector, tapHandler);
+                };
+                tapHandler = function(endEvent) {
+                    endEvent.preventDefault();
+                    removeTapHandler();
+                    if (target === endEvent.target) {
+                        tapped = true;
+                        return angular.element(elem).trigger("tap", endEvent);
+                    }
+                };
+                moveHandler = function(moveEvent) {
+                    var moveX, moveY, touchMove;
+                    touchMove = moveEvent.originalEvent.touches[0] || moveEvent.originalEvent.changedTouches[0] || moveEvent.touches[0];
+                    moveX = touchMove.pageX;
+                    moveY = touchMove.pageY;
+                    if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
+                        tapped = true;
+                        return removeTapHandler();
+                    }
+                };
+                $timeout(removeTapHandler, timeThreshold);
+                elem.on("touchmove", selector, moveHandler);
+                return elem.on("touchend", selector, tapHandler);
+            });
+            elem.on("mousedown", selector, function() {
+                var handleMousemove, handleMouseup;
+                dragged = false;
+                handleMousemove = function() {
+                    return dragged = true;
+                };
+                handleMouseup = function() {
+                    elem.off("mousemove", selector);
+                    return elem.off("mouseup", selector);
+                };
+                elem.on("mousemove", selector, handleMousemove);
+                return elem.on("mouseup", selector, handleMouseup);
+            });
+            elem.on("click", selector, function(event) {
+                if (!(tapped || dragged)) {
+                    return angular.element(elem).trigger("tap", $(event.currentTarget));
+                }
+            });
+            return angular.element(elem);
+        };
+    } ]);
     /*
       ngTap Directive
   
@@ -19,64 +89,10 @@
       Usage:
       <button type="button" ng-tap="doSomething()">Click Me</button>
   */
-    lcTouch.directive("ngTap", [ "$timeout", function($timeout) {
+    lcTouch.directive("ngTap", [ "$ngTap", function($ngTap) {
         return function(scope, elem, attrs) {
-            var distanceThreshold, dragged, tapped, timeThreshold;
-            distanceThreshold = 25;
-            timeThreshold = 500;
-            tapped = false;
-            dragged = false;
-            elem.on("touchstart", function(startEvent) {
-                var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
-                target = startEvent.target;
-                touchStart = startEvent.touches[0];
-                startX = touchStart.pageX;
-                startY = touchStart.pageY;
-                tapped = false;
-                removeTapHandler = function() {
-                    $timeout.cancel();
-                    elem.off("touchmove", moveHandler);
-                    return elem.off("touchend", tapHandler);
-                };
-                tapHandler = function(endEvent) {
-                    endEvent.preventDefault();
-                    removeTapHandler();
-                    if (target === endEvent.target) {
-                        tapped = true;
-                        return scope.$apply(attrs["ngTap"]);
-                    }
-                };
-                moveHandler = function(moveEvent) {
-                    var moveX, moveY, touchMove;
-                    touchMove = moveEvent.touches[0];
-                    moveX = touchMove.pageX;
-                    moveY = touchMove.pageY;
-                    if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
-                        tapped = true;
-                        return removeTapHandler();
-                    }
-                };
-                $timeout(removeTapHandler, timeThreshold);
-                elem.on("touchmove", moveHandler);
-                return elem.on("touchend", tapHandler);
-            });
-            elem.on("mousedown", function() {
-                var handleMousemove, handleMouseup;
-                dragged = false;
-                handleMousemove = function() {
-                    return dragged = true;
-                };
-                handleMouseup = function() {
-                    elem.off("mousemove");
-                    return elem.off("mouseup");
-                };
-                elem.on("mousemove", handleMousemove);
-                return elem.on("mouseup", handleMouseup);
-            });
-            return elem.bind("click", function() {
-                if (!(tapped || dragged)) {
-                    return scope.$apply(attrs["ngTap"]);
-                }
+            return $ngTap(elem).on("tap", function() {
+                return scope.$apply(attrs["ngTap"]);
             });
         };
     } ]);
@@ -99,7 +115,7 @@
             elem.on("touchstart", function(startEvent) {
                 var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
                 target = startEvent.target;
-                touchStart = startEvent.touches[0];
+                touchStart = startEvent.originalEvent.touches[0] || startEvent.originalEvent.changedTouches[0] || startEvent.touches[0];
                 startX = touchStart.pageX;
                 startY = touchStart.pageY;
                 removeTapHandler = function() {
@@ -121,7 +137,7 @@
                 };
                 moveHandler = function(moveEvent) {
                     var moveX, moveY, touchMove;
-                    touchMove = moveEvent.touches[0];
+                    touchMove = moveEvent.originalEvent.touches[0] || moveEvent.originalEvent.changedTouches[0] || moveEvent.touches[0];
                     moveX = touchMove.pageX;
                     moveY = touchMove.pageY;
                     if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
@@ -207,7 +223,7 @@
                 endY = 0;
                 ontouchstart = function(e) {
                     var touch;
-                    touch = e.touches[0];
+                    touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0] || e.touches[0];
                     startX = touch.pageX;
                     startY = touch.pageY;
                     elem.on("touchmove", ontouchmove);
@@ -218,7 +234,7 @@
                 };
                 ontouchmove = function(e) {
                     var touch;
-                    touch = e.touches[0];
+                    touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0] || e.touches[0];
                     endX = touch.pageX;
                     endY = touch.pageY;
                     if (events.move) {
