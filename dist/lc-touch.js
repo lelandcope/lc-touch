@@ -1,7 +1,7 @@
 /*! 
  lc-touch v0.6.10 
  Author: Leland Cope @lelandcope 
- 2015-04-06 
+ 2015-11-29 
  */
 
 (function() {
@@ -333,7 +333,7 @@
         };
     } ]);
     (function(name, definition) {
-        if (typeof module !== void 0) {
+        if (typeof module !== "undefined") {
             return module.exports = definition();
         } else if (typeof define === "function" && typeof define.amd === "object") {
             return define(definition);

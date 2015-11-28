@@ -322,7 +322,7 @@ lcTouch.directive 'ngSwipeLeft', ['$swipe', ($swipe)->
 
 
 ((name, definition)->
-    unless typeof module is undefined
+    unless typeof module is 'undefined'
         module.exports = definition()
     else if typeof define is 'function' and typeof define.amd is 'object'
         define definition
