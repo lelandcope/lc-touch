@@ -16,13 +16,13 @@
       - elem - {html element} - The html element you want to listen for a touch event on.
   */
     lcTouch.factory("$ngTap", [ "$timeout", function($timeout) {
-        return function(elem, selector) {
+        return function(elem) {
             var distanceThreshold, dragged, tapped, timeThreshold;
             distanceThreshold = 25;
             timeThreshold = 500;
             tapped = false;
             dragged = false;
-            elem.on("touchstart", selector, function(startEvent) {
+            elem.on("touchstart", function(startEvent) {
                 var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
                 target = startEvent.target;
                 touchStart = startEvent.originalEvent.touches[0] || startEvent.originalEvent.changedTouches[0] || startEvent.touches[0];
@@ -31,8 +31,8 @@
                 tapped = false;
                 removeTapHandler = function() {
                     $timeout.cancel();
-                    elem.off("touchmove", selector, moveHandler);
-                    return elem.off("touchend", selector, tapHandler);
+                    elem.off("touchmove", moveHandler);
+                    return elem.off("touchend", tapHandler);
                 };
                 tapHandler = function(endEvent) {
                     endEvent.preventDefault();
@@ -53,23 +53,23 @@
                     }
                 };
                 $timeout(removeTapHandler, timeThreshold);
-                elem.on("touchmove", selector, moveHandler);
-                return elem.on("touchend", selector, tapHandler);
+                elem.on("touchmove", moveHandler);
+                return elem.on("touchend", tapHandler);
             });
-            elem.on("mousedown", selector, function() {
+            elem.on("mousedown", function() {
                 var handleMousemove, handleMouseup;
                 dragged = false;
                 handleMousemove = function() {
                     return dragged = true;
                 };
                 handleMouseup = function() {
-                    elem.off("mousemove", selector);
-                    return elem.off("mouseup", selector);
+                    elem.off("mousemove");
+                    return elem.off("mouseup");
                 };
-                elem.on("mousemove", selector, handleMousemove);
-                return elem.on("mouseup", selector, handleMouseup);
+                elem.on("mousemove", handleMousemove);
+                return elem.on("mouseup", handleMouseup);
             });
-            elem.on("click", selector, function(event) {
+            elem.on("click", function(event) {
                 if (!(tapped || dragged)) {
                     return angular.element(elem).trigger("tap", $(event.currentTarget));
                 }

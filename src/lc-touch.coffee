@@ -11,13 +11,13 @@ lcTouch = angular.module 'lc.touch', []
 ###
 
 lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
-    return (elem, selector)->
+    return (elem)->
         distanceThreshold    = 25
         timeThreshold        = 500
         tapped               = false
         dragged              = false
 
-        elem.on 'touchstart', selector, (startEvent)->
+        elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
             touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
                             startEvent.touches[0]
@@ -27,8 +27,8 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
 
             removeTapHandler = ()->
                 $timeout.cancel()
-                elem.off 'touchmove', selector, moveHandler
-                elem.off 'touchend', selector, tapHandler
+                elem.off 'touchmove', moveHandler
+                elem.off 'touchend', tapHandler
 
             tapHandler = (endEvent)->
                 endEvent.preventDefault()
@@ -50,23 +50,23 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
 
             $timeout removeTapHandler, timeThreshold
 
-            elem.on 'touchmove', selector, moveHandler
-            elem.on 'touchend', selector, tapHandler
+            elem.on 'touchmove', moveHandler
+            elem.on 'touchend', tapHandler
 
-        elem.on 'mousedown', selector, ->
+        elem.on 'mousedown', ->
             dragged = false
 
             handleMousemove = ->
                 dragged = true
 
             handleMouseup = ->
-                elem.off 'mousemove', selector
-                elem.off 'mouseup', selector
+                elem.off 'mousemove'
+                elem.off 'mouseup'
 
-            elem.on 'mousemove', selector, handleMousemove
-            elem.on 'mouseup', selector, handleMouseup
+            elem.on 'mousemove', handleMousemove
+            elem.on 'mouseup', handleMouseup
 
-        elem.on 'click', selector, (event)->
+        elem.on 'click', (event)->
             unless tapped or dragged
                 angular.element(elem).trigger 'tap', $(event.currentTarget)
 
