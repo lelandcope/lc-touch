@@ -329,7 +329,7 @@ lcTouch.directive 'ngSwipeLeft', ['$swipe', ($swipe)->
     else if typeof define is 'function' and typeof define.amd is 'object'
         define definition
     else
-        @name = definition()
+        @[name] = definition()
 )('lcTouch', ->
     return lcTouch
 )

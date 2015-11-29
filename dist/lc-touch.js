@@ -14,7 +14,7 @@
   
       Parameters:
       - elem - {html element} - The html element you want to listen for a touch event on.
-  */
+   */
     lcTouch.factory("$ngTap", [ "$timeout", function($timeout) {
         return function(elem) {
             var distanceThreshold, dragged, tapped, timeThreshold;
@@ -91,7 +91,7 @@
   
       Usage:
       <button type="button" ng-tap="doSomething()">Click Me</button>
-  */
+   */
     lcTouch.directive("ngTap", [ "$ngTap", function($ngTap) {
         return function(scope, elem, attrs) {
             return $ngTap(elem).on("tap", function() {
@@ -107,7 +107,7 @@
   
       Usage:
       <button type="button" ng-dbltap="doSomething()">Click Me</button>
-  */
+   */
     lcTouch.directive("ngDbltap", [ "$timeout", function($timeout) {
         return function(scope, elem, attrs) {
             var distanceThreshold, tapcount, tapped, timeThreshold;
@@ -167,7 +167,7 @@
   
       Usage:
       <button type="button" ng-tap-outside="closeDropdown()">Show Dropdown</button>
-  */
+   */
     lcTouch.directive("ngTapOutside", [ "$timeout", function($timeout) {
         return function(scope, elem, attrs) {
             var onElementTouchStart, onTouchEnd, stopEvent;
@@ -215,7 +215,7 @@
       <div ng-swipe-down="onswipedown()">
           ...... HTML ......
       </div>
-  */
+   */
     lcTouch.factory("$swipe", [ function() {
         return {
             bind: function(elem, events) {
@@ -342,7 +342,7 @@
         } else if (typeof define === "function" && typeof define.amd === "object") {
             return define(definition);
         } else {
-            return this.name = definition();
+            return this[name] = definition();
         }
     })("lcTouch", function() {
         return lcTouch;
