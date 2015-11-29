@@ -25,6 +25,9 @@
             elem.on("touchstart", function(startEvent) {
                 var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
                 target = startEvent.target;
+                if (target.disabled) {
+                    return;
+                }
                 touchStart = startEvent.originalEvent.touches[0] || startEvent.originalEvent.changedTouches[0] || startEvent.touches[0];
                 startX = touchStart.pageX;
                 startY = touchStart.pageY;

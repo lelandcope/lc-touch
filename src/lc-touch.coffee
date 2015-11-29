@@ -19,6 +19,7 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
 
         elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
+            if target.disabled then return
             touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
                             startEvent.touches[0]
             startX      = touchStart.pageX
