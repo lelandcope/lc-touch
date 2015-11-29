@@ -224,6 +224,7 @@ lcTouch.factory '$swipe', [()->
             endY         = 0
 
             ontouchstart = (e)->
+                e.preventDefault()
                 touch   = e.originalEvent.touches[0] or e.originalEvent.changedTouches[0] or e.touches[0]
                 startX  = touch.pageX
                 startY  = touch.pageY

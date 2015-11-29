@@ -223,6 +223,7 @@
                 endY = 0;
                 ontouchstart = function(e) {
                     var touch;
+                    e.preventDefault();
                     touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0] || e.touches[0];
                     startX = touch.pageX;
                     startY = touch.pageY;
