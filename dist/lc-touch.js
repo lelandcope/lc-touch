@@ -1,7 +1,7 @@
 /*! 
  lc-touch v0.6.10 
  Author: Leland Cope @lelandcope 
- 2015-11-29 
+ 2015-12-01 
  */
 
 (function() {
@@ -28,7 +28,7 @@
                 if (target.disabled) {
                     return;
                 }
-                touchStart = startEvent.originalEvent.touches[0] || startEvent.originalEvent.changedTouches[0] || startEvent.touches[0];
+                touchStart = startEvent.touches[0] || startEvent.changedTouches[0] || startEvent.touches[0];
                 startX = touchStart.pageX;
                 startY = touchStart.pageY;
                 tapped = false;
@@ -42,12 +42,12 @@
                     removeTapHandler();
                     if (target === endEvent.target) {
                         tapped = true;
-                        return angular.element(elem).trigger("tap", endEvent);
+                        return angular.element(elem).triggerHandler("tap", endEvent);
                     }
                 };
                 moveHandler = function(moveEvent) {
                     var moveX, moveY, touchMove;
-                    touchMove = moveEvent.originalEvent.touches[0] || moveEvent.originalEvent.changedTouches[0] || moveEvent.touches[0];
+                    touchMove = moveEvent.touches[0] || moveEvent.changedTouches[0] || moveEvent.touches[0];
                     moveX = touchMove.pageX;
                     moveY = touchMove.pageY;
                     if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
@@ -74,7 +74,7 @@
             });
             elem.on("click", function(event) {
                 if (!(tapped || dragged)) {
-                    return angular.element(elem).trigger("tap", $(event.currentTarget));
+                    return angular.element(elem).triggerHandler("tap", angular.element(event.currentTarget));
                 }
             });
             return angular.element(elem);
@@ -118,7 +118,7 @@
             elem.on("touchstart", function(startEvent) {
                 var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
                 target = startEvent.target;
-                touchStart = startEvent.originalEvent.touches[0] || startEvent.originalEvent.changedTouches[0] || startEvent.touches[0];
+                touchStart = startEvent.touches[0] || startEvent.changedTouches[0] || startEvent.touches[0];
                 startX = touchStart.pageX;
                 startY = touchStart.pageY;
                 removeTapHandler = function() {
@@ -140,7 +140,7 @@
                 };
                 moveHandler = function(moveEvent) {
                     var moveX, moveY, touchMove;
-                    touchMove = moveEvent.originalEvent.touches[0] || moveEvent.originalEvent.changedTouches[0] || moveEvent.touches[0];
+                    touchMove = moveEvent.touches[0] || moveEvent.changedTouches[0] || moveEvent.touches[0];
                     moveX = touchMove.pageX;
                     moveY = touchMove.pageY;
                     if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
@@ -177,16 +177,16 @@
                     if (newValue === true) {
                         return $timeout(function() {
                             elem.bind("touchstart mousedown", onElementTouchStart);
-                            return $("html").bind("touchend mouseup", onTouchEnd);
+                            return angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
                         });
                     } else {
                         elem.unbind("touchstart mousedown", onElementTouchStart);
-                        return $("html").unbind("touchend mouseup", onTouchEnd);
+                        return angular.element(document.documentElement).unbind("touchend mouseup", onTouchEnd);
                     }
                 });
             } else {
                 elem.bind("touchstart mousedown", onElementTouchStart);
-                $("html").bind("touchend mouseup", onTouchEnd);
+                angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
             }
             onTouchEnd = function(event) {
                 if (!stopEvent) {
@@ -227,7 +227,7 @@
                 ontouchstart = function(e) {
                     var touch;
                     e.preventDefault();
-                    touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0] || e.touches[0];
+                    touch = e.touches[0] || e.changedTouches[0] || e.touches[0];
                     startX = touch.pageX;
                     startY = touch.pageY;
                     elem.on("touchmove", ontouchmove);
@@ -238,7 +238,7 @@
                 };
                 ontouchmove = function(e) {
                     var touch;
-                    touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0] || e.touches[0];
+                    touch = e.touches[0] || e.changedTouches[0] || e.touches[0];
                     endX = touch.pageX;
                     endY = touch.pageY;
                     if (events.move) {

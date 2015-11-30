@@ -20,7 +20,7 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
         elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
             if target.disabled then return
-            touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
+            touchStart  = startEvent.touches[0] or startEvent.changedTouches[0] or
                             startEvent.touches[0]
             startX      = touchStart.pageX
             startY      = touchStart.pageY
@@ -37,10 +37,10 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
 
                 if target is endEvent.target
                     tapped = true
-                    angular.element(elem).trigger 'tap', endEvent
+                    angular.element(elem).triggerHandler 'tap', endEvent
 
             moveHandler = (moveEvent)->
-                touchMove  = moveEvent.originalEvent.touches[0] or moveEvent.originalEvent.changedTouches[0] or 
+                touchMove  = moveEvent.touches[0] or moveEvent.changedTouches[0] or
                             moveEvent.touches[0]
                 moveX      = touchMove.pageX
                 moveY      = touchMove.pageY
@@ -69,7 +69,7 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
 
         elem.on 'click', (event)->
             unless tapped or dragged
-                angular.element(elem).trigger 'tap', $(event.currentTarget)
+                angular.element(elem).triggerHandler 'tap', angular.element(event.currentTarget)
 
 
         return angular.element(elem)
@@ -114,7 +114,7 @@ lcTouch.directive 'ngDbltap', ['$timeout', ($timeout)->
 
         elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
-            touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
+            touchStart  = startEvent.touches[0] or startEvent.changedTouches[0] or
                             startEvent.touches[0]
             startX      = touchStart.pageX
             startY      = touchStart.pageY
@@ -136,7 +136,7 @@ lcTouch.directive 'ngDbltap', ['$timeout', ($timeout)->
                         scope.$apply attrs["ngDbltap"]
 
             moveHandler = (moveEvent)->
-                touchMove  = moveEvent.originalEvent.touches[0] or moveEvent.originalEvent.changedTouches[0] or 
+                touchMove  = moveEvent.touches[0] or moveEvent.changedTouches[0] or
                             moveEvent.touches[0]
                 moveX      = touchMove.pageX
                 moveY      = touchMove.pageY
@@ -176,13 +176,13 @@ lcTouch.directive 'ngTapOutside', ['$timeout', ($timeout)->
                 if newValue is true
                     $timeout ()->
                         elem.bind 'touchstart mousedown', onElementTouchStart
-                        $('html').bind 'touchend mouseup', onTouchEnd
+                        angular.element(document.documentElement).bind 'touchend mouseup', onTouchEnd
                 else
                     elem.unbind 'touchstart mousedown', onElementTouchStart
-                    $('html').unbind 'touchend mouseup', onTouchEnd
+                    angular.element(document.documentElement).unbind 'touchend mouseup', onTouchEnd
         else
             elem.bind 'touchstart mousedown', onElementTouchStart
-            $('html').bind 'touchend mouseup', onTouchEnd
+            angular.element(document.documentElement).bind 'touchend mouseup', onTouchEnd
 
 
         # JS Functions
@@ -226,7 +226,7 @@ lcTouch.factory '$swipe', [()->
 
             ontouchstart = (e)->
                 e.preventDefault()
-                touch   = e.originalEvent.touches[0] or e.originalEvent.changedTouches[0] or e.touches[0]
+                touch   = e.touches[0] or e.changedTouches[0] or e.touches[0]
                 startX  = touch.pageX
                 startY  = touch.pageY
 
@@ -236,7 +236,7 @@ lcTouch.factory '$swipe', [()->
                 if events.start then events.start elem, [startX, startY], e
 
             ontouchmove = (e)->
-                touch   = e.originalEvent.touches[0] or e.originalEvent.changedTouches[0] or e.touches[0]
+                touch   = e.touches[0] or e.changedTouches[0] or e.touches[0]
                 endX  = touch.pageX
                 endY  = touch.pageY
 
