@@ -1,7 +1,7 @@
 /*! 
  lc-touch v0.6.10 
  Author: Leland Cope @lelandcope 
- 2015-12-01 
+ 2015-12-11 
  */
 
 (function() {
@@ -16,7 +16,7 @@
       - elem - {html element} - The html element you want to listen for a touch event on.
    */
     lcTouch.factory("$ngTap", [ "$timeout", function($timeout) {
-        return function(elem) {
+        return function(elem, handler) {
             var distanceThreshold, dragged, tapped, timeThreshold;
             distanceThreshold = 25;
             timeThreshold = 500;
@@ -42,7 +42,7 @@
                     removeTapHandler();
                     if (target === endEvent.target) {
                         tapped = true;
-                        return angular.element(elem).triggerHandler("tap", endEvent);
+                        return handler(endEvent);
                     }
                 };
                 moveHandler = function(moveEvent) {
@@ -74,7 +74,7 @@
             });
             elem.on("click", function(event) {
                 if (!(tapped || dragged)) {
-                    return angular.element(elem).triggerHandler("tap", angular.element(event.currentTarget));
+                    return handler(event);
                 }
             });
             return angular.element(elem);
@@ -92,10 +92,17 @@
       Usage:
       <button type="button" ng-tap="doSomething()">Click Me</button>
    */
-    lcTouch.directive("ngTap", [ "$ngTap", function($ngTap) {
+    lcTouch.directive("ngTap", [ "$ngTap", "$parse", function($ngTap, $parse) {
         return function(scope, elem, attrs) {
-            return $ngTap(elem).on("tap", function() {
-                return scope.$apply(attrs["ngTap"]);
+            var tapHandler;
+            tapHandler = $parse(attrs.ngTap);
+            return $ngTap(elem, function(event) {
+                angular.element(elem).triggerHandler("tap", event);
+                return scope.$apply(function() {
+                    return tapHandler(scope, {
+                        $event: event
+                    });
+                });
             });
         };
     } ]);
@@ -108,55 +115,69 @@
       Usage:
       <button type="button" ng-dbltap="doSomething()">Click Me</button>
    */
-    lcTouch.directive("ngDbltap", [ "$timeout", function($timeout) {
-        return function(scope, elem, attrs) {
-            var distanceThreshold, tapcount, tapped, timeThreshold;
-            distanceThreshold = 25;
-            timeThreshold = 500;
-            tapped = false;
-            tapcount = 0;
-            elem.on("touchstart", function(startEvent) {
-                var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
-                target = startEvent.target;
-                touchStart = startEvent.touches[0] || startEvent.changedTouches[0] || startEvent.touches[0];
-                startX = touchStart.pageX;
-                startY = touchStart.pageY;
-                removeTapHandler = function() {
-                    $timeout.cancel();
-                    elem.off("touchmove", moveHandler);
-                    elem.off("touchend", tapHandler);
-                    return tapcount = 0;
-                };
-                tapHandler = function(endEvent) {
-                    endEvent.preventDefault();
-                    tapcount++;
-                    if (tapcount >= 2) {
-                        removeTapHandler();
-                        if (target === endEvent.target) {
-                            tapped = true;
-                            return scope.$apply(attrs["ngDbltap"]);
+    lcTouch.directive("ngDbltap", [ "$timeout", "$parse", function($timeout, $parse) {
+        return {
+            restrict: "A",
+            link: function(scope, elem, attrs) {
+                var distanceThreshold, tapcount, tapped, timeThreshold;
+                distanceThreshold = 25;
+                timeThreshold = 500;
+                tapped = false;
+                tapcount = 0;
+                elem.on("touchstart", function(startEvent) {
+                    var dbltapHandler, moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
+                    target = startEvent.target;
+                    touchStart = startEvent.touches[0] || startEvent.changedTouches[0] || startEvent.touches[0];
+                    startX = touchStart.pageX;
+                    startY = touchStart.pageY;
+                    dbltapHandler = $parse(attrs.ngDbltap);
+                    removeTapHandler = function() {
+                        $timeout.cancel();
+                        elem.off("touchmove", moveHandler);
+                        elem.off("touchend", tapHandler);
+                        return tapcount = 0;
+                    };
+                    tapHandler = function(endEvent) {
+                        endEvent.preventDefault();
+                        tapcount++;
+                        if (tapcount >= 2) {
+                            removeTapHandler();
+                            if (target === endEvent.target) {
+                                tapped = true;
+                                angular.element(elem).triggerHandler("dbltap", endEvent);
+                                return scope.$apply(function() {
+                                    return dbltapHandler(scope, {
+                                        $event: endEvent
+                                    });
+                                });
+                            }
                         }
+                    };
+                    moveHandler = function(moveEvent) {
+                        var moveX, moveY, touchMove;
+                        touchMove = moveEvent.touches[0] || moveEvent.changedTouches[0] || moveEvent.touches[0];
+                        moveX = touchMove.pageX;
+                        moveY = touchMove.pageY;
+                        if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
+                            tapped = true;
+                            return removeTapHandler();
+                        }
+                    };
+                    $timeout(removeTapHandler, timeThreshold);
+                    elem.on("touchmove", moveHandler);
+                    return elem.on("touchend", tapHandler);
+                });
+                return elem.bind("dblclick", function(event) {
+                    if (!tapped) {
+                        angular.element(elem).triggerHandler("dbltap", event);
+                        return scope.$apply(function() {
+                            return dbltapHandler(scope, {
+                                $event: event
+                            });
+                        });
                     }
-                };
-                moveHandler = function(moveEvent) {
-                    var moveX, moveY, touchMove;
-                    touchMove = moveEvent.touches[0] || moveEvent.changedTouches[0] || moveEvent.touches[0];
-                    moveX = touchMove.pageX;
-                    moveY = touchMove.pageY;
-                    if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
-                        tapped = true;
-                        return removeTapHandler();
-                    }
-                };
-                $timeout(removeTapHandler, timeThreshold);
-                elem.on("touchmove", moveHandler);
-                return elem.on("touchend", tapHandler);
-            });
-            return elem.bind("dblclick", function() {
-                if (!tapped) {
-                    return scope.$apply(attrs["ngDbltap"]);
-                }
-            });
+                });
+            }
         };
     } ]);
     /*
@@ -168,42 +189,49 @@
       Usage:
       <button type="button" ng-tap-outside="closeDropdown()">Show Dropdown</button>
    */
-    lcTouch.directive("ngTapOutside", [ "$timeout", function($timeout) {
-        return function(scope, elem, attrs) {
-            var onElementTouchStart, onTouchEnd, stopEvent;
-            stopEvent = false;
-            if (angular.isDefined(attrs.when)) {
-                scope.$watch(attrs.when, function(newValue, oldValue) {
-                    if (newValue === true) {
-                        return $timeout(function() {
-                            elem.bind("touchstart mousedown", onElementTouchStart);
-                            return angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
-                        });
-                    } else {
-                        elem.unbind("touchstart mousedown", onElementTouchStart);
-                        return angular.element(document.documentElement).unbind("touchend mouseup", onTouchEnd);
-                    }
-                });
-            } else {
-                elem.bind("touchstart mousedown", onElementTouchStart);
-                angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
-            }
-            onTouchEnd = function(event) {
-                if (!stopEvent) {
-                    return $timeout(function() {
-                        return scope.$eval(attrs.ngTapOutside);
-                    }, 10);
+    lcTouch.directive("ngTapOutside", [ "$timeout", "$parse", function($timeout, $parse) {
+        return {
+            restrict: "A",
+            link: function(scope, elem, attrs) {
+                var onElementTouchStart, onTouchEnd, stopEvent;
+                stopEvent = false;
+                if (angular.isDefined(attrs.when)) {
+                    scope.$watch(attrs.when, function(newValue, oldValue) {
+                        if (newValue === true) {
+                            return $timeout(function() {
+                                elem.bind("touchstart mousedown", onElementTouchStart);
+                                return angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
+                            });
+                        } else {
+                            elem.unbind("touchstart mousedown", onElementTouchStart);
+                            return angular.element(document.documentElement).unbind("touchend mouseup", onTouchEnd);
+                        }
+                    });
                 } else {
-                    return stopEvent = false;
+                    elem.bind("touchstart mousedown", onElementTouchStart);
+                    angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
                 }
-            };
-            onElementTouchStart = function(event) {
-                event.stopPropagation();
-                return stopEvent = true;
-            };
-            return scope.$on("event:stopTapOutside", function() {
-                return stopEvent = true;
-            });
+                onTouchEnd = function(event) {
+                    if (!stopEvent) {
+                        return $timeout(function() {
+                            return scope.$apply(function() {
+                                return $parse(attrs.ngTapOutside)(scope, {
+                                    $event: event
+                                });
+                            });
+                        }, 10);
+                    } else {
+                        return stopEvent = false;
+                    }
+                };
+                onElementTouchStart = function(event) {
+                    event.stopPropagation();
+                    return stopEvent = true;
+                };
+                return scope.$on("event:stopTapOutside", function() {
+                    return stopEvent = true;
+                });
+            }
         };
     } ]);
     /*
@@ -260,17 +288,23 @@
             }
         };
     } ]);
-    lcTouch.directive("ngSwipeDown", [ "$swipe", function($swipe) {
+    lcTouch.directive("ngSwipeDown", [ "$swipe", "$parse", function($swipe, $parse) {
         return {
             restrict: "A",
             link: function(scope, elem, attrs) {
-                var onend, threshold;
+                var onend, swipeHandler, threshold;
                 threshold = Number(attrs.ngSwipeDownThreshold) || 70;
-                onend = function(elem, amounts) {
+                swipeHandler = $parse(attrs.ngSwipeDown);
+                onend = function(elem, amounts, event) {
                     var amount;
                     amount = amounts[1];
                     if (amount < 0 && Math.abs(amount) >= threshold) {
-                        return scope.$apply(attrs["ngSwipeDown"]);
+                        angular.element(elem).triggerHandler("swipeDown", event);
+                        return scope.$apply(function() {
+                            return swipeHandler(scope, {
+                                $event: event
+                            });
+                        });
                     }
                 };
                 return $swipe.bind(elem, {
@@ -279,17 +313,23 @@
             }
         };
     } ]);
-    lcTouch.directive("ngSwipeUp", [ "$swipe", function($swipe) {
+    lcTouch.directive("ngSwipeUp", [ "$swipe", "$parse", function($swipe, $parse) {
         return {
             restrict: "A",
             link: function(scope, elem, attrs) {
-                var onend, threshold;
+                var onend, swipeHandler, threshold;
                 threshold = Number(attrs.ngSwipeUpThreshold) || 70;
-                onend = function(elem, amounts) {
+                swipeHandler = $parse(attrs.ngSwipeUp);
+                onend = function(elem, amounts, event) {
                     var amount;
                     amount = amounts[1];
                     if (amount > 0 && Math.abs(amount) >= threshold) {
-                        return scope.$apply(attrs["ngSwipeUp"]);
+                        angular.element(elem).triggerHandler("swipeUp", event);
+                        return scope.$apply(function() {
+                            return swipeHandler(scope, {
+                                $event: event
+                            });
+                        });
                     }
                 };
                 return $swipe.bind(elem, {
@@ -298,17 +338,23 @@
             }
         };
     } ]);
-    lcTouch.directive("ngSwipeRight", [ "$swipe", function($swipe) {
+    lcTouch.directive("ngSwipeRight", [ "$swipe", "$parse", function($swipe, $parse) {
         return {
             restrict: "A",
             link: function(scope, elem, attrs) {
-                var onend, threshold;
+                var onend, swipeHandler, threshold;
                 threshold = Number(attrs.ngSwipeRightThreshold) || 70;
-                onend = function(elem, amounts) {
+                swipeHandler = $parse(attrs.ngSwipeRight);
+                onend = function(elem, amounts, event) {
                     var amount;
                     amount = amounts[0];
                     if (amount < 0 && Math.abs(amount) >= threshold) {
-                        return scope.$apply(attrs["ngSwipeRight"]);
+                        angular.element(elem).triggerHandler("swipeRight", event);
+                        return scope.$apply(function() {
+                            return swipeHandler(scope, {
+                                $event: event
+                            });
+                        });
                     }
                 };
                 return $swipe.bind(elem, {
@@ -317,17 +363,23 @@
             }
         };
     } ]);
-    lcTouch.directive("ngSwipeLeft", [ "$swipe", function($swipe) {
+    lcTouch.directive("ngSwipeLeft", [ "$swipe", "$parse", function($swipe, $parse) {
         return {
             restrict: "A",
             link: function(scope, elem, attrs) {
-                var onend, threshold;
+                var onend, swipeHandler, threshold;
                 threshold = Number(attrs.ngSwipeLeftThreshold) || 70;
-                onend = function(elem, amounts) {
+                swipeHandler = $parse(attrs.ngSwipeLeft);
+                onend = function(elem, amounts, event) {
                     var amount;
                     amount = amounts[0];
                     if (amount > 0 && Math.abs(amount) >= threshold) {
-                        return scope.$apply(attrs["ngSwipeLeft"]);
+                        angular.element(elem).triggerHandler("swipeLeft", event);
+                        return scope.$apply(function() {
+                            return swipeHandler(scope, {
+                                $event: event
+                            });
+                        });
                     }
                 };
                 return $swipe.bind(elem, {
