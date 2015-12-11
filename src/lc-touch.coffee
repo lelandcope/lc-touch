@@ -170,58 +170,6 @@ lcTouch.directive 'ngDbltap', ['$timeout', '$parse', ($timeout, $parse)->
 
 
 ###
-    ngTapOutside
-
-    Description: A directive that listens when a user clicks or taps
-    outside the area.
-
-    Usage:
-    <button type="button" ng-tap-outside="closeDropdown()">Show Dropdown</button>
-###
-
-lcTouch.directive 'ngTapOutside', ['$timeout', '$parse', ($timeout, $parse)->
-    return {
-        restrict: 'A'
-        link: (scope, elem, attrs)->
-            stopEvent = false
-
-            if angular.isDefined attrs.when
-                scope.$watch attrs.when, (newValue, oldValue)->
-                    if newValue is true
-                        $timeout ()->
-                            elem.bind 'touchstart mousedown', onElementTouchStart
-                            angular.element(document.documentElement).bind 'touchend mouseup', onTouchEnd
-                    else
-                        elem.unbind 'touchstart mousedown', onElementTouchStart
-                        angular.element(document.documentElement).unbind 'touchend mouseup', onTouchEnd
-            else
-                elem.bind 'touchstart mousedown', onElementTouchStart
-                angular.element(document.documentElement).bind 'touchend mouseup', onTouchEnd
-
-
-            # JS Functions
-            onTouchEnd = (event)->
-                unless stopEvent
-                    $timeout ()->
-                        scope.$apply ->
-                            $parse(attrs.ngTapOutside)(scope, { $event: event })
-                    , 10
-                else
-                    stopEvent = false
-
-            onElementTouchStart = (event)->
-                event.stopPropagation()
-                stopEvent = true
-
-
-            # Event Listeners
-            scope.$on 'event:stopTapOutside', ()->
-                stopEvent = true
-    }
-]
-
-
-###
     ngSwipeDown, ngSwipeUp, ngSwipeLeft, ngSwipeRight
 
     Description: Adds swipe directives
