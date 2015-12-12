@@ -15,6 +15,8 @@
       - elem - {html element} - The html element you want to listen for a touch event on.
    */
     lcTouch.factory("$ngTap", [ "$timeout", function($timeout) {
+        var ACTIVE_CLASS_NAME;
+        ACTIVE_CLASS_NAME = "ng-tap-active";
         return function(elem, handler) {
             var distanceThreshold, dragged, tapped, timeThreshold;
             distanceThreshold = 25;
@@ -31,8 +33,10 @@
                 startX = touchStart.pageX;
                 startY = touchStart.pageY;
                 tapped = false;
+                elem.addClass(ACTIVE_CLASS_NAME);
                 removeTapHandler = function() {
                     $timeout.cancel();
+                    elem.removeClass(ACTIVE_CLASS_NAME);
                     elem.off("touchmove", moveHandler);
                     return elem.off("touchend", tapHandler);
                 };
@@ -71,12 +75,11 @@
                 elem.on("mousemove", handleMousemove);
                 return elem.on("mouseup", handleMouseup);
             });
-            elem.on("click", function(event) {
+            return elem.on("click", function(event) {
                 if (!(tapped || dragged)) {
                     return handler(event);
                 }
             });
-            return angular.element(elem);
         };
     } ]);
     /*
@@ -118,18 +121,18 @@
         return {
             restrict: "A",
             link: function(scope, elem, attrs) {
-                var distanceThreshold, tapcount, tapped, timeThreshold;
+                var dbltapHandler, distanceThreshold, tapcount, tapped, timeThreshold;
                 distanceThreshold = 25;
                 timeThreshold = 500;
                 tapped = false;
                 tapcount = 0;
+                dbltapHandler = $parse(attrs.ngDbltap);
                 elem.on("touchstart", function(startEvent) {
-                    var dbltapHandler, moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
+                    var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
                     target = startEvent.target;
                     touchStart = startEvent.touches[0] || startEvent.changedTouches[0] || startEvent.touches[0];
                     startX = touchStart.pageX;
                     startY = touchStart.pageY;
-                    dbltapHandler = $parse(attrs.ngDbltap);
                     removeTapHandler = function() {
                         $timeout.cancel();
                         elem.off("touchmove", moveHandler);
@@ -219,8 +222,12 @@
                     }
                 };
                 ontouchend = function(e) {
+                    var touch;
                     elem.off("touchmove", ontouchmove);
                     elem.off("touchend", ontouchend);
+                    touch = e.touches[0] || e.changedTouches[0] || e.touches[0];
+                    endX = touch.pageX;
+                    endY = touch.pageY;
                     if (events.end) {
                         events.end(elem, [ startX - endX, startY - endY ], e);
                     }
