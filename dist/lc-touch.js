@@ -1,9 +1,8 @@
 /*! 
  lc-touch v0.6.10 
  Author: Leland Cope @lelandcope 
- 2015-12-11 
+ 2015-12-12 
  */
-
 (function() {
     var lcTouch;
     lcTouch = angular.module("lc.touch", []);
@@ -176,60 +175,6 @@
                             });
                         });
                     }
-                });
-            }
-        };
-    } ]);
-    /*
-      ngTapOutside
-  
-      Description: A directive that listens when a user clicks or taps
-      outside the area.
-  
-      Usage:
-      <button type="button" ng-tap-outside="closeDropdown()">Show Dropdown</button>
-   */
-    lcTouch.directive("ngTapOutside", [ "$timeout", "$parse", function($timeout, $parse) {
-        return {
-            restrict: "A",
-            link: function(scope, elem, attrs) {
-                var onElementTouchStart, onTouchEnd, stopEvent;
-                stopEvent = false;
-                if (angular.isDefined(attrs.when)) {
-                    scope.$watch(attrs.when, function(newValue, oldValue) {
-                        if (newValue === true) {
-                            return $timeout(function() {
-                                elem.bind("touchstart mousedown", onElementTouchStart);
-                                return angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
-                            });
-                        } else {
-                            elem.unbind("touchstart mousedown", onElementTouchStart);
-                            return angular.element(document.documentElement).unbind("touchend mouseup", onTouchEnd);
-                        }
-                    });
-                } else {
-                    elem.bind("touchstart mousedown", onElementTouchStart);
-                    angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
-                }
-                onTouchEnd = function(event) {
-                    if (!stopEvent) {
-                        return $timeout(function() {
-                            return scope.$apply(function() {
-                                return $parse(attrs.ngTapOutside)(scope, {
-                                    $event: event
-                                });
-                            });
-                        }, 10);
-                    } else {
-                        return stopEvent = false;
-                    }
-                };
-                onElementTouchStart = function(event) {
-                    event.stopPropagation();
-                    return stopEvent = true;
-                };
-                return scope.$on("event:stopTapOutside", function() {
-                    return stopEvent = true;
                 });
             }
         };
