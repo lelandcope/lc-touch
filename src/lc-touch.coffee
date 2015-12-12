@@ -11,6 +11,8 @@ lcTouch = angular.module 'lc.touch', []
 ###
 
 lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
+    ACTIVE_CLASS_NAME = 'ng-tap-active'
+
     return (elem, handler)->
         distanceThreshold    = 25
         timeThreshold        = 500
@@ -20,14 +22,18 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
         elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
             if target.disabled then return
+
             touchStart  = startEvent.touches[0] or startEvent.changedTouches[0] or
                             startEvent.touches[0]
             startX      = touchStart.pageX
             startY      = touchStart.pageY
             tapped      = false
 
+            elem.addClass ACTIVE_CLASS_NAME
+
             removeTapHandler = ()->
                 $timeout.cancel()
+                elem.removeClass ACTIVE_CLASS_NAME
                 elem.off 'touchmove', moveHandler
                 elem.off 'touchend', tapHandler
 
@@ -70,9 +76,6 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
         elem.on 'click', (event)->
             unless tapped or dragged
                 handler(event)
-
-
-        return angular.element(elem)
 ]
 
 ###
@@ -117,6 +120,7 @@ lcTouch.directive 'ngDbltap', ['$timeout', '$parse', ($timeout, $parse)->
             timeThreshold        = 500
             tapped               = false
             tapcount             = 0
+            dbltapHandler        = $parse(attrs.ngDbltap)
 
             elem.on 'touchstart', (startEvent)->
                 target        = startEvent.target
@@ -124,7 +128,6 @@ lcTouch.directive 'ngDbltap', ['$timeout', '$parse', ($timeout, $parse)->
                                   startEvent.touches[0]
                 startX        = touchStart.pageX
                 startY        = touchStart.pageY
-                dbltapHandler = $parse(attrs.ngDbltap)
 
                 removeTapHandler = ()->
                     $timeout.cancel()
@@ -209,6 +212,9 @@ lcTouch.factory '$swipe', [()->
             ontouchend = (e)->
                 elem.off 'touchmove', ontouchmove
                 elem.off 'touchend', ontouchend
+                touch   = e.touches[0] or e.changedTouches[0] or e.touches[0]
+                endX    = touch.pageX
+                endY    = touch.pageY
 
                 if events.end then events.end elem, [startX - endX, startY - endY], e
 

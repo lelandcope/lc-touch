@@ -1,9 +1,8 @@
 /*! 
  lc-touch v0.6.10 
  Author: Leland Cope @lelandcope 
- 2015-12-11 
+ 2015-12-12 
  */
-
 (function() {
     var lcTouch;
     lcTouch = angular.module("lc.touch", []);
@@ -16,6 +15,8 @@
       - elem - {html element} - The html element you want to listen for a touch event on.
    */
     lcTouch.factory("$ngTap", [ "$timeout", function($timeout) {
+        var ACTIVE_CLASS_NAME;
+        ACTIVE_CLASS_NAME = "ng-tap-active";
         return function(elem, handler) {
             var distanceThreshold, dragged, tapped, timeThreshold;
             distanceThreshold = 25;
@@ -32,8 +33,10 @@
                 startX = touchStart.pageX;
                 startY = touchStart.pageY;
                 tapped = false;
+                elem.addClass(ACTIVE_CLASS_NAME);
                 removeTapHandler = function() {
                     $timeout.cancel();
+                    elem.removeClass(ACTIVE_CLASS_NAME);
                     elem.off("touchmove", moveHandler);
                     return elem.off("touchend", tapHandler);
                 };
@@ -72,12 +75,11 @@
                 elem.on("mousemove", handleMousemove);
                 return elem.on("mouseup", handleMouseup);
             });
-            elem.on("click", function(event) {
+            return elem.on("click", function(event) {
                 if (!(tapped || dragged)) {
                     return handler(event);
                 }
             });
-            return angular.element(elem);
         };
     } ]);
     /*
@@ -119,18 +121,18 @@
         return {
             restrict: "A",
             link: function(scope, elem, attrs) {
-                var distanceThreshold, tapcount, tapped, timeThreshold;
+                var dbltapHandler, distanceThreshold, tapcount, tapped, timeThreshold;
                 distanceThreshold = 25;
                 timeThreshold = 500;
                 tapped = false;
                 tapcount = 0;
+                dbltapHandler = $parse(attrs.ngDbltap);
                 elem.on("touchstart", function(startEvent) {
-                    var dbltapHandler, moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
+                    var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
                     target = startEvent.target;
                     touchStart = startEvent.touches[0] || startEvent.changedTouches[0] || startEvent.touches[0];
                     startX = touchStart.pageX;
                     startY = touchStart.pageY;
-                    dbltapHandler = $parse(attrs.ngDbltap);
                     removeTapHandler = function() {
                         $timeout.cancel();
                         elem.off("touchmove", moveHandler);
@@ -181,60 +183,6 @@
         };
     } ]);
     /*
-      ngTapOutside
-  
-      Description: A directive that listens when a user clicks or taps
-      outside the area.
-  
-      Usage:
-      <button type="button" ng-tap-outside="closeDropdown()">Show Dropdown</button>
-   */
-    lcTouch.directive("ngTapOutside", [ "$timeout", "$parse", function($timeout, $parse) {
-        return {
-            restrict: "A",
-            link: function(scope, elem, attrs) {
-                var onElementTouchStart, onTouchEnd, stopEvent;
-                stopEvent = false;
-                if (angular.isDefined(attrs.when)) {
-                    scope.$watch(attrs.when, function(newValue, oldValue) {
-                        if (newValue === true) {
-                            return $timeout(function() {
-                                elem.bind("touchstart mousedown", onElementTouchStart);
-                                return angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
-                            });
-                        } else {
-                            elem.unbind("touchstart mousedown", onElementTouchStart);
-                            return angular.element(document.documentElement).unbind("touchend mouseup", onTouchEnd);
-                        }
-                    });
-                } else {
-                    elem.bind("touchstart mousedown", onElementTouchStart);
-                    angular.element(document.documentElement).bind("touchend mouseup", onTouchEnd);
-                }
-                onTouchEnd = function(event) {
-                    if (!stopEvent) {
-                        return $timeout(function() {
-                            return scope.$apply(function() {
-                                return $parse(attrs.ngTapOutside)(scope, {
-                                    $event: event
-                                });
-                            });
-                        }, 10);
-                    } else {
-                        return stopEvent = false;
-                    }
-                };
-                onElementTouchStart = function(event) {
-                    event.stopPropagation();
-                    return stopEvent = true;
-                };
-                return scope.$on("event:stopTapOutside", function() {
-                    return stopEvent = true;
-                });
-            }
-        };
-    } ]);
-    /*
       ngSwipeDown, ngSwipeUp, ngSwipeLeft, ngSwipeRight
   
       Description: Adds swipe directives
@@ -274,8 +222,12 @@
                     }
                 };
                 ontouchend = function(e) {
+                    var touch;
                     elem.off("touchmove", ontouchmove);
                     elem.off("touchend", ontouchend);
+                    touch = e.touches[0] || e.changedTouches[0] || e.touches[0];
+                    endX = touch.pageX;
+                    endY = touch.pageY;
                     if (events.end) {
                         events.end(elem, [ startX - endX, startY - endY ], e);
                     }

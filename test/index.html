@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" ng-app="app">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui, maximum-scale=1.0, minimum-scale=1.0">
+  <title>Test lc-touch</title>
+  <style>
+    body {
+      margin: 8px;
+      font: caption;
+    }
+    main {
+      width: 80%;
+      height: 200px;
+      line-height: 200px;
+      border: 2px dashed;
+      font-size: 32px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    main.ng-tap-active {
+      color: red;
+    }
+    code {
+      overflow: scroll;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body ng-controller="RootController as Ctrl">
+  <main ng-tap="Ctrl.handleTap($event)"
+        ng-dbltap="Ctrl.handleDbltap($event)"
+        ng-swipe-up="Ctrl.handleSwipe('up', $event)"
+        ng-swipe-down="Ctrl.handleSwipe('down', $event)"
+        ng-swipe-left="Ctrl.handleSwipe('left', $event)"
+        ng-swipe-right="Ctrl.handleSwipe('right', $event)">Tap it &amp; drag it!</main>
+  <code ng-bind="Ctrl.result"></code>
+  <script src="node_modules/angular/angular.js"></script>
+  <script src="../dist/lc-touch.js"></script>
+  <script>
+    'use strict';
+
+    angular.module('app', ['lc.touch']).controller('RootController', function RootController() {
+      this.result = '';
+
+      this.handleTap = function handleTap($event) {
+        this.result += 'Tapped\n';
+        console.log('Tapped: ', $event);
+      };
+
+      this.handleDbltap = function handleDbltap($event) {
+        this.result += 'Double tapped\n';
+        console.log('Double tapped: ', $event);
+      };
+
+      this.handleSwipe = function handleSwipe(direction, $event) {
+        this.result += 'Swiped ' + direction + '\n';
+        console.log('Swiped ' + direction, $event);
+      };
+    });
+  </script>
+</body>
+</html>
