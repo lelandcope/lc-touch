@@ -1,9 +1,10 @@
 /*! 
  lc-touch v0.6.10 
  Author: Leland Cope @lelandcope 
- 2015-12-12 
+ 2016-01-04 
  */
 (function() {
+    "use strict";
     var lcTouch;
     lcTouch = angular.module("lc.touch", []);
     /*
@@ -13,6 +14,7 @@
   
       Parameters:
       - elem - {html element} - The html element you want to listen for a touch event on.
+      - handler - {function} - A callback function called when tap events are fired
    */
     lcTouch.factory("$ngTap", [ "$timeout", function($timeout) {
         var ACTIVE_CLASS_NAME;
@@ -24,7 +26,7 @@
             tapped = false;
             dragged = false;
             elem.on("touchstart", function(startEvent) {
-                var moveHandler, removeTapHandler, startX, startY, tapHandler, target, touchStart;
+                var moveHandler, removeTapHandler, startX, startY, tapHandler, target, timeoutPromise, touchStart;
                 target = startEvent.target;
                 if (target.disabled) {
                     return;
@@ -35,7 +37,7 @@
                 tapped = false;
                 elem.addClass(ACTIVE_CLASS_NAME);
                 removeTapHandler = function() {
-                    $timeout.cancel();
+                    $timeout.cancel(timeoutPromise);
                     elem.removeClass(ACTIVE_CLASS_NAME);
                     elem.off("touchmove", moveHandler);
                     return elem.off("touchend", tapHandler);
@@ -58,7 +60,7 @@
                         return removeTapHandler();
                     }
                 };
-                $timeout(removeTapHandler, timeThreshold);
+                timeoutPromise = $timeout(removeTapHandler, timeThreshold);
                 elem.on("touchmove", moveHandler);
                 return elem.on("touchend", tapHandler);
             });
@@ -83,6 +85,58 @@
         };
     } ]);
     /*
+      $ngHold Service
+  
+      Description: A service for ngHold. This allows you to add hold events to your own directives.
+  
+      Parameters:
+      - elem - {html element} - The html element you want to listen for a touch event on.
+      - handler - {function} - A callback function called when hold events are fired
+   */
+    lcTouch.factory("$ngHold", [ "$timeout", function($timeout) {
+        var ACTIVE_CLASS_NAME;
+        ACTIVE_CLASS_NAME = "ng-hold-active";
+        return function(elem, handler) {
+            var distanceThreshold, timeThreshold;
+            distanceThreshold = 25;
+            timeThreshold = 1e3;
+            elem.on("touchstart", function(startEvent) {
+                var holdHandler, moveHandler, removeHoldHandler, startX, startY, target, timeoutPromise, touchStart;
+                target = startEvent.target;
+                if (target.disabled) {
+                    return;
+                }
+                touchStart = startEvent.touches[0] || startEvent.changedTouches[0] || startEvent.touches[0];
+                startX = touchStart.pageX;
+                startY = touchStart.pageY;
+                elem.addClass(ACTIVE_CLASS_NAME);
+                removeHoldHandler = function() {
+                    $timeout.cancel(timeoutPromise);
+                    elem.removeClass(ACTIVE_CLASS_NAME);
+                    elem.off("touchmove", moveHandler);
+                    return elem.off("touchend", removeHoldHandler);
+                };
+                holdHandler = function() {
+                    removeHoldHandler();
+                    return handler(startEvent);
+                };
+                moveHandler = function(moveEvent) {
+                    var moveX, moveY, touchMove;
+                    touchMove = moveEvent.touches[0] || moveEvent.changedTouches[0] || moveEvent.touches[0];
+                    moveX = touchMove.pageX;
+                    moveY = touchMove.pageY;
+                    if (Math.abs(moveX - startX) > distanceThreshold || Math.abs(moveY - startY) > distanceThreshold) {
+                        return removeTapHandler();
+                    }
+                };
+                elem.on("touchmove", moveHandler);
+                elem.on("touchend", removeHoldHandler);
+                return timeoutPromise = $timeout(holdHandler, timeThreshold);
+            });
+            return angular.element(elem);
+        };
+    } ]);
+    /*
       ngTap Directive
   
       Description: A replacement for ngClick. This directive will take into account taps and clicks so it
@@ -102,6 +156,31 @@
                 angular.element(elem).triggerHandler("tap", event);
                 return scope.$apply(function() {
                     return tapHandler(scope, {
+                        $event: event
+                    });
+                });
+            });
+        };
+    } ]);
+    /*
+      ngHold Directive
+  
+      Description: Adds ng-hold directive. It works only for mobile.
+  
+      Parameters:
+      - ngHold - {string} - An expression representing what you would like to do when the element is holded
+  
+      Usage:
+      <button type="button" ng-hold="doSomething()">Hold Me</button>
+   */
+    lcTouch.directive("ngHold", [ "$ngHold", "$parse", function($ngHold, $parse) {
+        return function(scope, elem, attrs) {
+            var holdHandler;
+            holdHandler = $parse(attrs.ngHold);
+            return $ngHold(elem, function(event) {
+                angular.element(elem).triggerHandler("hold", event);
+                return scope.$apply(function() {
+                    return holdHandler(scope, {
                         $event: event
                     });
                 });
@@ -346,7 +425,7 @@
         } else if (typeof define === "function" && typeof define.amd === "object") {
             return define(definition);
         } else {
-            return this[name] = definition();
+            return window[name] = definition();
         }
     })("lcTouch", function() {
         return lcTouch;

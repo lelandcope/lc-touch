@@ -1,3 +1,5 @@
+'use strict'
+
 lcTouch = angular.module 'lc.touch', []
 
 ###
@@ -7,7 +9,7 @@ lcTouch = angular.module 'lc.touch', []
 
     Parameters:
     - elem - {html element} - The html element you want to listen for a touch event on.
-
+    - handler - {function} - A callback function called when tap events are fired
 ###
 
 lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
@@ -32,7 +34,7 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
             elem.addClass ACTIVE_CLASS_NAME
 
             removeTapHandler = ()->
-                $timeout.cancel()
+                $timeout.cancel timeoutPromise
                 elem.removeClass ACTIVE_CLASS_NAME
                 elem.off 'touchmove', moveHandler
                 elem.off 'touchend', tapHandler
@@ -55,7 +57,7 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
                     tapped = true
                     removeTapHandler()
 
-            $timeout removeTapHandler, timeThreshold
+            timeoutPromise = $timeout removeTapHandler, timeThreshold
 
             elem.on 'touchmove', moveHandler
             elem.on 'touchend', tapHandler
@@ -79,6 +81,61 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
 ]
 
 ###
+    $ngHold Service
+
+    Description: A service for ngHold. This allows you to add hold events to your own directives.
+
+    Parameters:
+    - elem - {html element} - The html element you want to listen for a touch event on.
+    - handler - {function} - A callback function called when hold events are fired
+###
+
+lcTouch.factory '$ngHold', ['$timeout', ($timeout)->
+    ACTIVE_CLASS_NAME = 'ng-hold-active'
+
+    return (elem, handler)->
+        distanceThreshold    = 25
+        timeThreshold        = 1000
+
+        elem.on 'touchstart', (startEvent)->
+            target      = startEvent.target
+            if target.disabled then return
+            touchStart  = startEvent.touches[0] or startEvent.changedTouches[0] or
+                            startEvent.touches[0]
+            startX      = touchStart.pageX
+            startY      = touchStart.pageY
+
+            elem.addClass ACTIVE_CLASS_NAME
+
+            removeHoldHandler = ()->
+                $timeout.cancel timeoutPromise
+                elem.removeClass ACTIVE_CLASS_NAME
+                elem.off 'touchmove', moveHandler
+                elem.off 'touchend', removeHoldHandler
+
+            holdHandler = ()->
+                removeHoldHandler()
+
+                handler(startEvent)
+
+            moveHandler = (moveEvent)->
+                touchMove  = moveEvent.touches[0] or moveEvent.changedTouches[0] or
+                            moveEvent.touches[0]
+                moveX      = touchMove.pageX
+                moveY      = touchMove.pageY
+
+                if Math.abs(moveX - startX) > distanceThreshold or Math.abs(moveY - startY) > distanceThreshold
+                    removeTapHandler()
+
+            elem.on 'touchmove', moveHandler
+            elem.on 'touchend', removeHoldHandler
+
+            timeoutPromise = $timeout holdHandler, timeThreshold
+
+        return angular.element(elem)
+]
+
+###
     ngTap Directive
 
     Description: A replacement for ngClick. This directive will take into account taps and clicks so it
@@ -99,6 +156,29 @@ lcTouch.directive 'ngTap', ['$ngTap', '$parse', ($ngTap, $parse)->
             angular.element(elem).triggerHandler 'tap', event
             scope.$apply ->
                 tapHandler(scope, { $event: event })
+]
+
+
+###
+    ngHold Directive
+
+    Description: Adds ng-hold directive. It works only for mobile.
+
+    Parameters:
+    - ngHold - {string} - An expression representing what you would like to do when the element is holded
+
+    Usage:
+    <button type="button" ng-hold="doSomething()">Hold Me</button>
+###
+
+lcTouch.directive 'ngHold', ['$ngHold', '$parse', ($ngHold, $parse)->
+    (scope, elem, attrs)->
+        holdHandler = $parse(attrs.ngHold)
+
+        $ngHold elem, (event)->
+            angular.element(elem).triggerHandler 'hold', event
+            scope.$apply ->
+                holdHandler(scope, { $event: event })
 ]
 
 
@@ -311,7 +391,7 @@ lcTouch.directive 'ngSwipeLeft', ['$swipe', '$parse', ($swipe, $parse)->
     else if typeof define is 'function' and typeof define.amd is 'object'
         define definition
     else
-        @[name] = definition()
+        window[name] = definition()
 )('lcTouch', ->
     return lcTouch
 )
