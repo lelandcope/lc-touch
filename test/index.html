@@ -13,13 +13,16 @@
       width: 80%;
       height: 200px;
       line-height: 200px;
-      border: 2px dashed;
+      border: 2px solid;
       font-size: 32px;
       margin: 20px auto;
       text-align: center;
     }
     main.ng-tap-active {
       color: red;
+    }
+    main.ng-hold-active {
+      border-style: dashed;
     }
     code {
       overflow: scroll;
@@ -29,6 +32,7 @@
 </head>
 <body ng-controller="RootController as Ctrl">
   <main ng-tap="Ctrl.handleTap($event)"
+        ng-hold="Ctrl.handleHold($event)"
         ng-dbltap="Ctrl.handleDbltap($event)"
         ng-swipe-up="Ctrl.handleSwipe('up', $event)"
         ng-swipe-down="Ctrl.handleSwipe('down', $event)"
@@ -46,6 +50,11 @@
       this.handleTap = function handleTap($event) {
         this.result += 'Tapped\n';
         console.log('Tapped: ', $event);
+      };
+
+      this.handleHold = function handleHold($event) {
+        this.result += 'Holded\n';
+        console.log('Holded: ', $event);
       };
 
       this.handleDbltap = function handleDbltap($event) {
