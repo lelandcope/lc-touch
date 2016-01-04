@@ -1,0 +1,14 @@
+{
+  "name": "lc-touch.test",
+  "version": "1.0.0",
+  "description": "Simple test project for lc-touch",
+  "main": "index.html",
+  "keywords": [
+    "lc-touch"
+  ],
+  "author": "CarterLi",
+  "license": "MIT",
+  "devDependencies": {
+    "angular": "^1.4.8"
+  }
+}

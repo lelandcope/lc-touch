@@ -17,7 +17,14 @@ module.exports = function(grunt) {
 
 		uglify: {
 			options: {
-				banner: "/*! \r\n <%= pkg.name %> v<%= pkg.version %> \r\n Author: <%= pkg.author %> \r\n <%= grunt.template.today('yyyy-mm-dd') %> \r\n */\r\n\r\n"
+				banner: [
+					"/*! ",
+					" <%= pkg.name %> v<%= pkg.version %> ",
+					" Author: <%= pkg.author %> ",
+					" <%= grunt.template.today('yyyy-mm-dd') %> ",
+					" */",
+					""
+				].join(require('os').EOL)
 			},
 
 			normal: {
@@ -51,7 +58,6 @@ module.exports = function(grunt) {
 
 	grunt.loadNpmTasks('grunt-contrib-coffee');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-vbump');
 
 
 	grunt.registerTask('build', ['coffee','uglify:normal','uglify:min']);

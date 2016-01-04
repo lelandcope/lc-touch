@@ -1,3 +1,5 @@
+'use strict'
+
 lcTouch = angular.module 'lc.touch', []
 
 ###
@@ -7,28 +9,35 @@ lcTouch = angular.module 'lc.touch', []
 
     Parameters:
     - elem - {html element} - The html element you want to listen for a touch event on.
-
+    - handler - {function} - A callback function called when tap events are fired
 ###
 
 lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
-    return (elem, selector)->
+    ACTIVE_CLASS_NAME = 'ng-tap-active'
+
+    return (elem, handler)->
         distanceThreshold    = 25
         timeThreshold        = 500
         tapped               = false
         dragged              = false
 
-        elem.on 'touchstart', selector, (startEvent)->
+        elem.on 'touchstart', (startEvent)->
             target      = startEvent.target
-            touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
+            if target.disabled then return
+
+            touchStart  = startEvent.touches[0] or startEvent.changedTouches[0] or
                             startEvent.touches[0]
             startX      = touchStart.pageX
             startY      = touchStart.pageY
             tapped      = false
 
+            elem.addClass ACTIVE_CLASS_NAME
+
             removeTapHandler = ()->
-                $timeout.cancel()
-                elem.off 'touchmove', selector, moveHandler
-                elem.off 'touchend', selector, tapHandler
+                $timeout.cancel timeoutPromise
+                elem.removeClass ACTIVE_CLASS_NAME
+                elem.off 'touchmove', moveHandler
+                elem.off 'touchend', tapHandler
 
             tapHandler = (endEvent)->
                 endEvent.preventDefault()
@@ -36,10 +45,10 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
 
                 if target is endEvent.target
                     tapped = true
-                    angular.element(elem).trigger 'tap', endEvent
+                    handler(endEvent)
 
             moveHandler = (moveEvent)->
-                touchMove  = moveEvent.originalEvent.touches[0] or moveEvent.originalEvent.changedTouches[0] or 
+                touchMove  = moveEvent.touches[0] or moveEvent.changedTouches[0] or
                             moveEvent.touches[0]
                 moveX      = touchMove.pageX
                 moveY      = touchMove.pageY
@@ -48,28 +57,80 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
                     tapped = true
                     removeTapHandler()
 
-            $timeout removeTapHandler, timeThreshold
+            timeoutPromise = $timeout removeTapHandler, timeThreshold
 
-            elem.on 'touchmove', selector, moveHandler
-            elem.on 'touchend', selector, tapHandler
+            elem.on 'touchmove', moveHandler
+            elem.on 'touchend', tapHandler
 
-        elem.on 'mousedown', selector, ->
+        elem.on 'mousedown', ->
             dragged = false
 
             handleMousemove = ->
                 dragged = true
 
             handleMouseup = ->
-                elem.off 'mousemove', selector
-                elem.off 'mouseup', selector
+                elem.off 'mousemove'
+                elem.off 'mouseup'
 
-            elem.on 'mousemove', selector, handleMousemove
-            elem.on 'mouseup', selector, handleMouseup
+            elem.on 'mousemove', handleMousemove
+            elem.on 'mouseup', handleMouseup
 
-        elem.on 'click', selector, (event)->
+        elem.on 'click', (event)->
             unless tapped or dragged
-                angular.element(elem).trigger 'tap', $(event.currentTarget)
+                handler(event)
+]
 
+###
+    $ngHold Service
+
+    Description: A service for ngHold. This allows you to add hold events to your own directives.
+
+    Parameters:
+    - elem - {html element} - The html element you want to listen for a touch event on.
+    - handler - {function} - A callback function called when hold events are fired
+###
+
+lcTouch.factory '$ngHold', ['$timeout', ($timeout)->
+    ACTIVE_CLASS_NAME = 'ng-hold-active'
+
+    return (elem, handler)->
+        distanceThreshold    = 25
+        timeThreshold        = 1000
+
+        elem.on 'touchstart', (startEvent)->
+            target      = startEvent.target
+            if target.disabled then return
+            touchStart  = startEvent.touches[0] or startEvent.changedTouches[0] or
+                            startEvent.touches[0]
+            startX      = touchStart.pageX
+            startY      = touchStart.pageY
+
+            elem.addClass ACTIVE_CLASS_NAME
+
+            removeHoldHandler = ()->
+                $timeout.cancel timeoutPromise
+                elem.removeClass ACTIVE_CLASS_NAME
+                elem.off 'touchmove', moveHandler
+                elem.off 'touchend', removeHoldHandler
+
+            holdHandler = ()->
+                removeHoldHandler()
+
+                handler(startEvent)
+
+            moveHandler = (moveEvent)->
+                touchMove  = moveEvent.touches[0] or moveEvent.changedTouches[0] or
+                            moveEvent.touches[0]
+                moveX      = touchMove.pageX
+                moveY      = touchMove.pageY
+
+                if Math.abs(moveX - startX) > distanceThreshold or Math.abs(moveY - startY) > distanceThreshold
+                    removeTapHandler()
+
+            elem.on 'touchmove', moveHandler
+            elem.on 'touchend', removeHoldHandler
+
+            timeoutPromise = $timeout holdHandler, timeThreshold
 
         return angular.element(elem)
 ]
@@ -87,10 +148,37 @@ lcTouch.factory '$ngTap', ['$timeout', ($timeout)->
     <button type="button" ng-tap="doSomething()">Click Me</button>
 ###
 
-lcTouch.directive 'ngTap', ['$ngTap', ($ngTap)->
+lcTouch.directive 'ngTap', ['$ngTap', '$parse', ($ngTap, $parse)->
     (scope, elem, attrs)->
-        $ngTap(elem).on 'tap', ->
-            scope.$apply attrs["ngTap"]
+        tapHandler = $parse(attrs.ngTap)
+
+        $ngTap elem, (event)->
+            angular.element(elem).triggerHandler 'tap', event
+            scope.$apply ->
+                tapHandler(scope, { $event: event })
+]
+
+
+###
+    ngHold Directive
+
+    Description: Adds ng-hold directive. It works only for mobile.
+
+    Parameters:
+    - ngHold - {string} - An expression representing what you would like to do when the element is holded
+
+    Usage:
+    <button type="button" ng-hold="doSomething()">Hold Me</button>
+###
+
+lcTouch.directive 'ngHold', ['$ngHold', '$parse', ($ngHold, $parse)->
+    (scope, elem, attrs)->
+        holdHandler = $parse(attrs.ngHold)
+
+        $ngHold elem, (event)->
+            angular.element(elem).triggerHandler 'hold', event
+            scope.$apply ->
+                holdHandler(scope, { $event: event })
 ]
 
 
@@ -104,103 +192,63 @@ lcTouch.directive 'ngTap', ['$ngTap', ($ngTap)->
     <button type="button" ng-dbltap="doSomething()">Click Me</button>
 ###
 
-lcTouch.directive 'ngDbltap', ['$timeout', ($timeout)->
-    (scope, elem, attrs)->
-        distanceThreshold    = 25
-        timeThreshold        = 500
-        tapped               = false
-        tapcount             = 0
+lcTouch.directive 'ngDbltap', ['$timeout', '$parse', ($timeout, $parse)->
+    return {
+        restrict: 'A'
+        link: (scope, elem, attrs)->
+            distanceThreshold    = 25
+            timeThreshold        = 500
+            tapped               = false
+            tapcount             = 0
+            dbltapHandler        = $parse(attrs.ngDbltap)
 
-        elem.on 'touchstart', (startEvent)->
-            target      = startEvent.target
-            touchStart  = startEvent.originalEvent.touches[0] or startEvent.originalEvent.changedTouches[0] or 
-                            startEvent.touches[0]
-            startX      = touchStart.pageX
-            startY      = touchStart.pageY
+            elem.on 'touchstart', (startEvent)->
+                target        = startEvent.target
+                touchStart    = startEvent.touches[0] or startEvent.changedTouches[0] or
+                                  startEvent.touches[0]
+                startX        = touchStart.pageX
+                startY        = touchStart.pageY
 
-            removeTapHandler = ()->
-                $timeout.cancel()
-                elem.off 'touchmove', moveHandler
-                elem.off 'touchend', tapHandler
-                tapcount = 0
+                removeTapHandler = ()->
+                    $timeout.cancel()
+                    elem.off 'touchmove', moveHandler
+                    elem.off 'touchend', tapHandler
+                    tapcount = 0
 
-            tapHandler = (endEvent)->
-                endEvent.preventDefault()
-                tapcount++
+                tapHandler = (endEvent)->
+                    endEvent.preventDefault()
+                    tapcount++
 
-                if tapcount >= 2
-                    removeTapHandler()
-                    if target is endEvent.target
+                    if tapcount >= 2
+                        removeTapHandler()
+                        if target is endEvent.target
+                            tapped = true
+                            angular.element(elem).triggerHandler 'dbltap', endEvent
+                            scope.$apply ->
+                                dbltapHandler(scope, { $event: endEvent })
+
+                moveHandler = (moveEvent)->
+                    touchMove  = moveEvent.touches[0] or moveEvent.changedTouches[0] or
+                                moveEvent.touches[0]
+                    moveX      = touchMove.pageX
+                    moveY      = touchMove.pageY
+
+                    if Math.abs(moveX - startX) > distanceThreshold or Math.abs(moveY - startY) > distanceThreshold
                         tapped = true
-                        scope.$apply attrs["ngDbltap"]
+                        removeTapHandler()
 
-            moveHandler = (moveEvent)->
-                touchMove  = moveEvent.originalEvent.touches[0] or moveEvent.originalEvent.changedTouches[0] or 
-                            moveEvent.touches[0]
-                moveX      = touchMove.pageX
-                moveY      = touchMove.pageY
+                $timeout removeTapHandler, timeThreshold
 
-                if Math.abs(moveX - startX) > distanceThreshold or Math.abs(moveY - startY) > distanceThreshold
-                    tapped = true
-                    removeTapHandler()
-
-            $timeout removeTapHandler, timeThreshold
-
-            elem.on 'touchmove', moveHandler
-            elem.on 'touchend', tapHandler
+                elem.on 'touchmove', moveHandler
+                elem.on 'touchend', tapHandler
 
 
-        elem.bind 'dblclick', ()->
-            unless tapped
-                scope.$apply attrs["ngDbltap"]
-]
-
-
-###
-    ngTapOutside
-
-    Description: A directive that listens when a user clicks or taps
-    outside the area.
-
-    Usage:
-    <button type="button" ng-tap-outside="closeDropdown()">Show Dropdown</button>
-###
-
-lcTouch.directive 'ngTapOutside', ['$timeout', ($timeout)->
-    (scope, elem, attrs)->
-        stopEvent = false
-
-        if angular.isDefined attrs.when
-            scope.$watch attrs.when, (newValue, oldValue)->
-                if newValue is true
-                    $timeout ()->
-                        elem.bind 'touchstart mousedown', onElementTouchStart
-                        $('html').bind 'touchend mouseup', onTouchEnd
-                else
-                    elem.unbind 'touchstart mousedown', onElementTouchStart
-                    $('html').unbind 'touchend mouseup', onTouchEnd
-        else
-            elem.bind 'touchstart mousedown', onElementTouchStart
-            $('html').bind 'touchend mouseup', onTouchEnd
-
-
-        # JS Functions
-        onTouchEnd = (event)->
-            unless stopEvent
-                $timeout ()->
-                    scope.$eval attrs.ngTapOutside
-                , 10
-            else
-                stopEvent = false
-
-        onElementTouchStart = (event)->
-            event.stopPropagation()
-            stopEvent = true
-
-
-        # Event Listeners
-        scope.$on 'event:stopTapOutside', ()->
-            stopEvent = true
+            elem.bind 'dblclick', (event)->
+                unless tapped
+                    angular.element(elem).triggerHandler 'dbltap', event
+                    scope.$apply ->
+                        dbltapHandler(scope, { $event: event })
+    }
 ]
 
 
@@ -224,7 +272,8 @@ lcTouch.factory '$swipe', [()->
             endY         = 0
 
             ontouchstart = (e)->
-                touch   = e.originalEvent.touches[0] or e.originalEvent.changedTouches[0] or e.touches[0]
+                e.preventDefault()
+                touch   = e.touches[0] or e.changedTouches[0] or e.touches[0]
                 startX  = touch.pageX
                 startY  = touch.pageY
 
@@ -234,15 +283,18 @@ lcTouch.factory '$swipe', [()->
                 if events.start then events.start elem, [startX, startY], e
 
             ontouchmove = (e)->
-                touch   = e.originalEvent.touches[0] or e.originalEvent.changedTouches[0] or e.touches[0]
-                endX  = touch.pageX
-                endY  = touch.pageY
+                touch   = e.touches[0] or e.changedTouches[0] or e.touches[0]
+                endX    = touch.pageX
+                endY    = touch.pageY
 
                 if events.move then events.move elem, [endX, endY], e
 
             ontouchend = (e)->
                 elem.off 'touchmove', ontouchmove
                 elem.off 'touchend', ontouchend
+                touch   = e.touches[0] or e.changedTouches[0] or e.touches[0]
+                endX    = touch.pageX
+                endY    = touch.pageY
 
                 if events.end then events.end elem, [startX - endX, startY - endY], e
 
@@ -255,65 +307,77 @@ lcTouch.factory '$swipe', [()->
     }
 ]
 
-lcTouch.directive 'ngSwipeDown', ['$swipe', ($swipe)->
+lcTouch.directive 'ngSwipeDown', ['$swipe', '$parse', ($swipe, $parse)->
     return {
         restrict: 'A'
         link: (scope, elem, attrs)->
             threshold = Number(attrs.ngSwipeDownThreshold) or 70
+            swipeHandler = $parse(attrs.ngSwipeDown)
 
-            onend = (elem, amounts)->
+            onend = (elem, amounts, event)->
                 amount = amounts[1]
 
                 if amount < 0 and Math.abs(amount) >= threshold
-                    scope.$apply attrs["ngSwipeDown"]
+                    angular.element(elem).triggerHandler 'swipeDown', event
+                    scope.$apply ->
+                        swipeHandler(scope, { $event: event })
 
             $swipe.bind elem, { end: onend }
     }
 ]
 
-lcTouch.directive 'ngSwipeUp', ['$swipe', ($swipe)->
+lcTouch.directive 'ngSwipeUp', ['$swipe', '$parse', ($swipe, $parse)->
     return {
         restrict: 'A'
         link: (scope, elem, attrs)->
             threshold = Number(attrs.ngSwipeUpThreshold) or 70
+            swipeHandler = $parse(attrs.ngSwipeUp)
 
-            onend = (elem, amounts)->
+            onend = (elem, amounts, event)->
                 amount = amounts[1]
 
                 if amount > 0 and Math.abs(amount) >= threshold
-                    scope.$apply attrs["ngSwipeUp"]
+                    angular.element(elem).triggerHandler 'swipeUp', event
+                    scope.$apply ->
+                        swipeHandler(scope, { $event: event })
 
             $swipe.bind elem, { end: onend }
     }
 ]
 
-lcTouch.directive 'ngSwipeRight', ['$swipe', ($swipe)->
+lcTouch.directive 'ngSwipeRight', ['$swipe', '$parse', ($swipe, $parse)->
     return {
         restrict: 'A'
         link: (scope, elem, attrs)->
             threshold = Number(attrs.ngSwipeRightThreshold) or 70
+            swipeHandler = $parse(attrs.ngSwipeRight)
 
-            onend = (elem, amounts)->
+            onend = (elem, amounts, event)->
                 amount = amounts[0]
 
                 if amount < 0 and Math.abs(amount) >= threshold
-                    scope.$apply attrs["ngSwipeRight"]
+                    angular.element(elem).triggerHandler 'swipeRight', event
+                    scope.$apply ->
+                        swipeHandler(scope, { $event: event })
 
             $swipe.bind elem, { end: onend }
     }
 ]
 
-lcTouch.directive 'ngSwipeLeft', ['$swipe', ($swipe)->
+lcTouch.directive 'ngSwipeLeft', ['$swipe', '$parse', ($swipe, $parse)->
     return {
         restrict: 'A'
         link: (scope, elem, attrs)->
             threshold = Number(attrs.ngSwipeLeftThreshold) or 70
+            swipeHandler = $parse(attrs.ngSwipeLeft)
 
-            onend = (elem, amounts)->
+            onend = (elem, amounts, event)->
                 amount = amounts[0]
 
                 if amount > 0 and Math.abs(amount) >= threshold
-                    scope.$apply attrs["ngSwipeLeft"]
+                    angular.element(elem).triggerHandler 'swipeLeft', event
+                    scope.$apply ->
+                        swipeHandler(scope, { $event: event })
 
             $swipe.bind elem, { end: onend }
     }
@@ -322,12 +386,12 @@ lcTouch.directive 'ngSwipeLeft', ['$swipe', ($swipe)->
 
 
 ((name, definition)->
-    unless typeof module is undefined
+    unless typeof module is 'undefined'
         module.exports = definition()
     else if typeof define is 'function' and typeof define.amd is 'object'
         define definition
     else
-        @name = definition()
+        window[name] = definition()
 )('lcTouch', ->
     return lcTouch
 )
